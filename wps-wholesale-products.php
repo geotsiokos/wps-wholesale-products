@@ -49,6 +49,19 @@ class Wps_Wholesale_Products {
 	 */
 	public static function woocommerce_product_search_service_post_ids_for_request( &$product_ids, $context ) {
 
+		$current_logged_user = wp_get_current_user();
+		$current_user_id = $current_logged_user->ID;
+		$wholesale_user = false;
+		if ( $current_user_id ) {
+			$current_user_roles = $current_logged_user->roles;
+			$wholesale_roles = apply_filters( 'wps_service_post_ids_wholesale_roles', array( 'wholesale_customer' ) );
+			foreach ( $current_user_roles as $role ) {
+				if ( in_array( $role, $wholesale_roles ) ) {
+					$wholesale_user = true;
+				}
+			}
+		}
+
 		if ( count( self::$wholesale_product_ids ) > 0 ) {
 
 			// product ids for the current context
@@ -70,7 +83,11 @@ class Wps_Wholesale_Products {
 						$wholesale_context_products = array_merge( $variation_ids, $wholesale_context_products );
 					}
 				}
-				$product_ids = $wholesale_context_products;
+				if ( $wholesale_user ) {
+					$product_ids = $wholesale_context_products;
+				} else {
+					$product_ids = array_diff( $product_ids, $wholesale_context_products );
+				}
 			}
 		}
 
