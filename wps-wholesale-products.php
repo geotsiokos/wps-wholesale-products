@@ -63,13 +63,15 @@ class Wps_Wholesale_Products {
 			}
 
 			// For each of these products get their variation ids
-			foreach( $wholesale_context_products as $product_id ) {
-				$variation_ids = get_post_meta( $product_id, 'wholesale_customer_variations_with_wholesale_price', false );
-				if ( count( $variation_ids ) > 0 ) {
-					$wholesale_context_products = array_merge( $variation_ids, $wholesale_context_products );
+			if ( count( $wholesale_context_products ) > 0 ) {
+				foreach( $wholesale_context_products as $product_id ) {
+					$variation_ids = get_post_meta( $product_id, 'wholesale_customer_variations_with_wholesale_price', false );
+					if ( count( $variation_ids ) > 0 ) {
+						$wholesale_context_products = array_merge( $variation_ids, $wholesale_context_products );
+					}
 				}
+				$product_ids = $wholesale_context_products;
 			}
-			$product_ids = $wholesale_context_products;
 		}
 
 	}
