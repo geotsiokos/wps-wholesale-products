@@ -48,44 +48,29 @@ class Wps_Wholesale_Products {
 	 * @param string $context
 	 */
 	public static function woocommerce_product_search_service_post_ids_for_request( &$product_ids, $context ) {
+
 		if ( count( self::$wholesale_product_ids ) > 0 ) {
-			$additional_ids = array();
-			foreach ( self::$wholesale_product_ids as $product_id ) {
-				$product = wc_get_product( $product_id );
-				if ( $product ) {
-					if ( $product->is_type( 'variable' ) ) {
-						$variation_ids = get_post_meta( $product_id, 'wholesale_customer_variations_with_wholesale_price', false );
-						
-						if ( count( $variation_ids ) > 0 ) {
-							$additional_ids = array_merge( $additional_ids, $variation_ids );
-						}
-					}
+
+			// product ids for the current context
+			$context_products = array_intersect( $product_ids, self::$wholesale_product_ids );
+
+			// Wholesale products that have the postmeta wholesale_customer_have_wholesale_price
+			$wholesale_context_products = array();
+			foreach( $context_products as $context_product_id ) {
+				if ( get_post_meta( $context_product_id, 'wholesale_customer_have_wholesale_price', true ) ) {
+					$wholesale_context_products[] = $context_product_id;
 				}
 			}
-			$wholesale_products_variations = array_merge( self::$wholesale_product_ids, $additional_ids );
-			$unfiltered_product_ids = array_intersect( $product_ids, $wholesale_products_variations );
-			$filtered_product_ids = array();
-			foreach ( $unfiltered_product_ids as $unfiltered_product_id ) {
-				$filtered_product = wc_get_product( $unfiltered_product_id );
-				if ( $filtered_product ) {
-					if ( $filtered_product->is_type( 'variable' ) ) {
-						$available_variations = $filtered_product->get_available_variations();
-						$variation_ids = wp_list_pluck( $available_variations, 'variation_id' );
-						foreach ( $variation_ids as $variation_id ) {
-							if ( in_array( $variation_id, $unfiltered_product_ids ) ) {
-								$filtered_product_ids[] = $variation_id;
-								$filtered_product_ids[] = $unfiltered_product_id;
-							}
-						}
-					} else {
-						if ( $filtered_product->is_type( 'simple' ) ) {
-							$filtered_product_ids[] = $unfiltered_product_id;
-						}
-					}
+
+			// For each of these products get their variation ids
+			foreach( $wholesale_context_products as $product_id ) {
+				$variation_ids = get_post_meta( $product_id, 'wholesale_customer_variations_with_wholesale_price', false );
+				if ( count( $variation_ids ) > 0 ) {
+					$wholesale_context_products = array_merge( $variation_ids, $wholesale_context_products );
 				}
 			}
-			$filtered_product_ids = array_unique( $filtered_product_ids );
-			$product_ids = $filtered_product_ids;
+			$product_ids = $wholesale_context_products;
 		}
+
 	}
 } Wps_Wholesale_Products::init();
